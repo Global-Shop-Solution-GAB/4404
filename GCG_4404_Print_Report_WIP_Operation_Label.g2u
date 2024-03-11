@@ -1,0 +1,425 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+V.Local.sParams.Declare(String)
+V.Local.sValues.Declare(String)
+V.Local.sjob.Declare(String)
+V.Local.ssuffix.Declare(String)
+V.Local.sseq.Declare(String)
+V.Local.sQty.Declare(String)
+V.Local.sQtyCompleted.Declare(String)
+V.Local.sWC.Declare(String)
+V.Local.sEmployee.Declare(String)
+V.Local.sscrapqty.Declare(String)
+V.Local.sCloseflag.Declare(String)
+V.Local.sScrapflag.Declare(String)
+V.Local.sScrapCode.Declare(String)
+V.Local.sScrapDescription.Declare(String)
+V.Local.sLMO.Declare(String)
+V.Local.sQualitynbr.Declare(String)
+V.Local.sCurPart.Declare(String)
+V.Local.sCurDescr.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sPartDescr.Declare(String)
+V.Local.sCust.Declare(String)
+V.Local.sName.Declare(String)
+V.Local.sNextSeq.Declare(String)
+V.Local.sNextPart.Declare(String)
+V.Local.sNextDescr.Declare(String)
+V.Local.sWOQty.Declare(String)
+V.Local.sWOCustQty.Declare(String)
+V.Local.sWOPriority.Declare(String)
+V.Local.sWODateDue.Declare(Date)
+V.Local.sNext_DateStart.Declare(Date)
+V.Local.sNext_DateDue.Declare(Date)
+V.Local.sTopParentPart.Declare(String)
+V.Local.sTopParentJob.Declare(String)
+V.Local.sTopParentSuffix.Declare(String)
+V.Local.sTopParentDescr.Declare(String)
+V.Local.sParentPart.Declare(String)
+V.Local.sParentDescr.Declare(String)
+V.Local.sParentJob.Declare(String)
+V.Local.sParentSuffix.Declare(String)
+V.Local.iRptId.Declare(Long)
+V.Local.srptLoc.Declare(String)
+V.Local.sTPrinter.Declare(String)
+V.Local.sParentInitWC.Declare(String)
+V.Local.sScrapRef.Declare(String)
+V.Local.sScrapPrinter.Declare(String)
+
+
+V.Local.sSel.Declare(String)
+V.Local.sSelA.Declare(String)
+V.Local.sSelB.Declare(String)
+
+V.Local.sQty.Set(".000000")
+V.Local.sscrapqty.Set(".000000")
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+'if called from update job populate hook
+F.Intrinsic.Control.If(V.Caller.Hook,=,"15840")
+	Variable.passed.000048.set("Move Ticket")
+	F.Intrinsic.Control.CallSub(Unload)
+F.Intrinsic.Control.EndIf
+
+
+'verify trmnl is on ATG_Move_Tckt_Setup to be able to print label/comments
+F.Intrinsic.String.Concat("select * from ATG_MOVE_TCKT_SETUP where TRMNL='",V.Caller.Terminal,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstX",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstX.EOF,=,True)
+		F.Intrinsic.Control.CallSub(Unload)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstX.Close
+
+F.Intrinsic.String.Concat("delete from ATG_WIP_Oper_Label where TRMNL='",V.Caller.Terminal,"'",V.Local.sSel)
+F.ODBC.Connection!Con.Execute(V.Local.sSel)
+
+'if called from the script1 button on GUI update job
+F.Intrinsic.Control.If(V.Caller.Hook,=,"15850")
+	V.Local.sjob.Set(V.passed.009990)
+	V.Local.ssuffix.Set(V.Passed.009991)
+	V.Local.sseq.Set(V.Passed.009992)
+	V.Local.sQty.Set(V.Passed.000001)
+	V.Local.sWC.Set(V.Passed.000010)
+	V.Local.sEmployee.Set(V.Passed.009994)
+	V.Local.sscrapqty.Set(V.Passed.000002)
+	V.Local.sCloseflag.Set(V.Passed.000003)
+	V.Local.sQualitynbr.Set(V.Passed.010002)
+	V.Local.sScrapRef.Set(1)
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Caller.GSSVersion,"=","2010%")
+'if called from the Process button on update job
+F.Intrinsic.Control.AndIf(V.Caller.Hook,=,"15890")
+	V.Local.sjob.Set(V.passed.009990)
+	V.Local.ssuffix.Set(V.Passed.009991)
+	V.Local.sseq.Set(V.Passed.009992)
+	V.Local.sQty.Set(V.Passed.000001)
+	V.Local.sWC.Set(V.Passed.000010)
+	V.Local.sEmployee.Set(V.Passed.009994)
+	V.Local.sscrapqty.Set(V.Passed.000002)
+	V.Local.sCloseflag.Set(V.Passed.000003)
+	V.Local.sQualitynbr.Set(V.Passed.010002)
+
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Caller.GSSVersion,"=","2010%")
+'if called from the Process button on update multiple jobs
+F.Intrinsic.Control.AndIf(V.Caller.Hook,=,"15915")
+
+			
+	V.Local.sjob.Set(V.passed.009990)
+	V.Local.ssuffix.Set(V.Passed.009991)
+	V.Local.sseq.Set(V.Passed.009992)
+	V.Local.sQty.Set(V.Passed.000001)
+
+
+
+	V.Local.sCloseflag.Set(V.Passed.000003)
+	V.Local.sQualitynbr.Set(V.Passed.010002)
+
+
+F.Intrinsic.Control.Endif
+
+
+F.Intrinsic.Control.If(V.Caller.GSSVersion,"<>","2010%")
+'if called from the Process button on update job (new pre-process hook for single and multiple)
+F.Intrinsic.Control.AndIf(V.Caller.Hook,=,"15881")
+	V.Local.sjob.Set(V.passed.009990)
+	V.Local.ssuffix.Set(V.Passed.009991)
+	V.Local.sseq.Set(V.Passed.009992)
+	V.Local.sQty.Set(V.Passed.000001)
+	V.Local.sWC.Set(V.Passed.000010)
+	V.Local.sEmployee.Set(V.Passed.009994)
+	V.Local.sscrapqty.Set(V.Passed.000002)
+	V.Local.sCloseflag.Set(V.Passed.000003)
+	V.Local.sQualitynbr.Set(V.Passed.010002)
+	V.Local.sScrapRef.Set(V.Passed.SCRAP-REF)
+
+
+F.Intrinsic.Control.Endif
+
+
+'BN disabled these lines Mar 16, 2017, for project 4404. Program can continue even if the Good Qty = 0.
+'if good pieces is 0 then don't continue
+'F.Intrinsic.Control.If(V.Local.sQty,=,".000000")
+'F.Intrinsic.Control.AndIf(V.Local.sscrapqty,=,".000000")
+'	F.Intrinsic.Control.CallSub(Unload)
+'F.Intrinsic.Control.EndIf
+
+'V.Local.sPart.Declare(String)
+'V.Local.sCust.Declare(String)
+'V.Local.sName.Declare(String)
+F.Intrinsic.String.Concat("select PART,DESCRIPTION,UNITS_COMPLETE from V_JOB_OPERATIONS where JOB='",V.Local.sjob,"' and SUFFIX='",V.Local.ssuffix,"' and SEQ='",V.Local.sseq,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sCurPart.Set(V.ODBC.Con!rstSel.FieldValTrim!PART)
+		V.Local.sCurDescr.Set(V.ODBC.Con!rstSel.FieldValTrim!DESCRIPTION)
+		V.Local.sQtyCompleted.Set(V.ODBC.Con!rstSel.FieldValTrim!UNITS_COMPLETE)
+
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.String.Concat("select SEQ,PART,DESCRIPTION,LMO,DATE_START,DATE_DUE,UNITS_COMPLETE from V_JOB_OPERATIONS where JOB='",V.Local.sjob,"' and SUFFIX='",V.Local.ssuffix,"' and SEQ>'",V.Local.sseq,"' and LMO <> 'C'  and LMO <> 'M'  and Task_Seq <> 'T' order by SEQ",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sNextSeq.Set(V.ODBC.Con!rstSel.FieldValTrim!SEQ)
+		V.Local.sNextPart.Set(V.ODBC.Con!rstSel.FieldValTrim!PART)
+		V.Local.sNextDescr.Set(V.ODBC.Con!rstSel.FieldValTrim!DESCRIPTION)
+		V.Local.sLMO.Set(V.ODBC.Con!rstSel.FieldValTrim!LMO)
+		V.Local.sNext_DateStart.Set(V.ODBC.Con!rstSel.FieldValTrim!DATE_START)
+		V.Local.sNext_DateDue.Set(V.ODBC.Con!rstSel.FieldValTrim!DATE_DUE)
+		
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.String.Concat("select PART,CUSTOMER,PRIORITY,PART_DESCRIPTION,QTY_ORDER,QTY_CUSTOMER,DATE_DUE  from V_JOB_HEADER where JOB='",V.Local.sjob,"' and SUFFIX='",V.Local.ssuffix,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sPart.Set(V.ODBC.Con!rstSel.FieldValTrim!PART)
+		V.Local.sCust.Set(V.ODBC.Con!rstSel.FieldValTrim!CUSTOMER)
+		V.Local.sWOPriority.Set(V.ODBC.Con!rstSel.FieldValTrim!PRIORITY)
+		V.Local.sPartDescr.Set(V.ODBC.Con!rstSel.FieldValTrim!PART_DESCRIPTION)
+		V.Local.sWOQty.Set(V.ODBC.Con!rstSel.FieldValTrim!QTY_ORDER)
+		V.Local.sWOCustQty.Set(V.ODBC.Con!rstSel.FieldValTrim!QTY_CUSTOMER)
+		V.Local.sWODateDue.Set(V.ODBC.Con!rstSel.FieldValTrim!DATE_DUE)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.String.Concat("select NAME_CUSTOMER from V_CUSTOMER_MASTER where CUSTOMER='",V.Local.sCust,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sName.Set(V.ODBC.Con!rstSel.FieldValTrim!NAME_CUSTOMER)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+
+F.Intrinsic.Control.If(V.Caller.GSSVersion,"=","2010%")
+F.Intrinsic.String.Concat("select SCRAP_REASON from V_JOBS_IN_PROCESS where JOB='",V.Local.sjob,"' and SUFFIX='",V.Local.ssuffix,"' and SEQUENCE ='",V.Local.sseq,"' and EMPLOYEE_NAME='",V.Local.sEmployee,"'  order by sequence_key desc",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sScrapCode.Set(V.ODBC.Con!rstSel.FieldValTrim!SCRAP_REASON)
+		F.Intrinsic.String.Concat("select SCRAP_CODE_DESC from V_RJCT_SCRP_CODES where SCRAP_CODE='",V.Local.sScrapCode,"'",V.Local.sSelA)
+		F.ODBC.Connection!Con.OpenRecordsetRO("rstSelA",V.Local.sSelA)
+			F.Intrinsic.Control.If(V.ODBC.Con!rstSelA.EOF,=,False)
+			V.Local.sScrapDescription.Set(V.ODBC.Con!rstSelA.FieldValTrim!SCRAP_CODE_DESC)
+			F.Intrinsic.Control.EndIf
+		F.ODBC.Con!rstSelA.Close
+
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Concat("select Parent_WO,Parent_Suffix_Parent from V_JOB_HEADER where Job='",V.Local.sjob,"' and SUFFIX='",V.Local.ssuffix,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sParentJob.Set(V.ODBC.Con!rstSel.FieldValTrim!Parent_WO)
+		V.Local.sParentSuffix.Set(V.ODBC.Con!rstSel.FieldValTrim!Parent_Suffix_Parent)
+		F.Intrinsic.String.Concat("select Part, Part_Description from V_JOB_HEADER where Job='",V.Local.sParentJob,"' and Suffix='",V.Local.sParentSuffix,"'",V.Local.sSelA)
+		F.ODBC.Connection!Con.OpenRecordsetRO("rstSelA",V.Local.sSelA)
+			F.Intrinsic.Control.If(V.ODBC.Con!rstSelA.EOF,=,False)
+				V.Local.sParentPart.Set(V.ODBC.Con!rstSelA.FieldValTrim!Part)
+				V.Local.sParentDescr.Set(V.ODBC.Con!rstSelA.FieldValTrim!Part_Description)
+			F.Intrinsic.Control.EndIf
+		F.ODBC.Con!rstSelA.Close
+
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+
+F.Intrinsic.String.Concat("select Job,Suffix,Part, Part_Description from V_JOB_HEADER where Job='",V.Local.sjob,"' and SUFFIX='000'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sTopParentJob.Set(V.ODBC.Con!rstSel.FieldValTrim!Job)
+		V.Local.sTopParentSuffix.Set(V.ODBC.Con!rstSel.FieldValTrim!Suffix)
+		V.Local.sTopParentPart.Set(V.ODBC.Con!rstSel.FieldValTrim!Part)
+		V.Local.sTopParentDescr.Set(V.ODBC.Con!rstSel.FieldValTrim!Part_Description)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.String.Concat("select PART from V_JOB_OPERATIONS where JOB='",V.Local.sParentJob,"' and SUFFIX='",V.Local.sParentSuffix,"' and LMO = 'L' order by SEQ",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sParentInitWC.Set(V.ODBC.Con!rstSel.FieldValTrim!PART)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+
+F.Intrinsic.String.Concat("select * from ATG_WIP_Oper_Label where TRMNL='",V.Caller.Terminal,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRW("rstSel",V.Local.sSel)
+	F.ODBC.Con!rstSel.AddNew
+		F.ODBC.Con!rstSel.Set!TRMNL(V.Caller.Terminal)
+		F.ODBC.Con!rstSel.Set!JOB(V.Local.sjob)
+		F.ODBC.Con!rstSel.Set!SUFFIX(V.Local.ssuffix)
+		F.ODBC.Con!rstSel.Set!CUR_SEQ(V.Local.sseq)
+		F.ODBC.Con!rstSel.Set!CUR_PART(V.Local.sCurPart)
+		F.ODBC.Con!rstSel.Set!CUR_DESCR(V.Local.sCurDescr)
+		F.ODBC.Con!rstSel.Set!LMO(V.Local.sLMO)
+		F.ODBC.Con!rstSel.Set!QTY(V.Local.sQty)
+		F.ODBC.Con!rstSel.Set!WORKCENTER(V.Local.sWC)
+		F.ODBC.Con!rstSel.Set!EMPLOYEE(V.Local.sEmployee)
+		F.ODBC.Con!rstSel.Set!QUALITY_NO(V.Local.sQualitynbr)
+		F.ODBC.Con!rstSel.Set!SCRAP_CODE(V.Local.sScrapCode)
+		F.ODBC.Con!rstSel.Set!SCRAP_CODE_DESC(V.Local.sScrapDescription)
+		F.ODBC.Con!rstSel.Set!SCRAP_QTY(V.Local.sscrapqty)
+		F.ODBC.Con!rstSel.Set!CLOSE_FLAG(V.Local.sCloseflag)
+		F.ODBC.Con!rstSel.Set!PART(V.Local.sPart)
+		F.ODBC.Con!rstSel.Set!CUSTOMER(V.Local.sCust)
+		F.ODBC.Con!rstSel.Set!NAME(V.Local.sName)
+		F.ODBC.Con!rstSel.Set!NEXT_SEQ(V.Local.sNextSeq)
+		F.ODBC.Con!rstSel.Set!NEXT_PART(V.Local.sNextPart)
+		F.ODBC.Con!rstSel.Set!NEXT_DESCR(V.Local.sNextDescr)
+		F.ODBC.Con!rstSel.Set!Parent_Job(V.Local.sParentJob)
+		F.ODBC.Con!rstSel.Set!Parent_Suffix(V.Local.sParentSuffix)
+		F.ODBC.Con!rstSel.Set!Parent_Part(V.Local.sParentPart)
+		F.ODBC.Con!rstSel.Set!Parent_Descr(V.Local.sParentDescr)
+		F.ODBC.Con!rstSel.Set!Top_Parent_Job(V.Local.sTopParentJob)
+		F.ODBC.Con!rstSel.Set!Top_Parent_Suffix(V.Local.sTopParentSuffix)
+		F.ODBC.Con!rstSel.Set!Top_Parent_Part(V.Local.sTopParentPart)
+		F.ODBC.Con!rstSel.Set!Top_Parent_Descr(V.Local.sTopParentDescr)
+		F.ODBC.Con!rstSel.Set!QUALITY_NO(V.Local.sQualitynbr)
+		F.ODBC.Con!rstSel.Set!NEXT_SEQ_START(V.Local.sNext_DateStart)
+		F.ODBC.Con!rstSel.Set!NEXT_SEQ_DUE(V.Local.sNext_DateDue)
+		F.ODBC.Con!rstSel.Set!WO_PRIORITY(V.Local.sWOPriority)
+		F.ODBC.Con!rstSel.Set!PART_DESCR(V.Local.sPartDescr)
+		F.ODBC.Con!rstSel.Set!WO_QTY(V.Local.sWOQty)
+		F.ODBC.Con!rstSel.Set!WO_CUSTOMER_QTY(V.Local.sWOCustQty)
+		F.ODBC.Con!rstSel.Set!WO_DUE_DATE(V.Local.sWODateDue)
+		F.ODBC.Con!rstSel.Set!QTY_COMPLETED(V.Local.sQtyCompleted)
+		F.ODBC.Con!rstSel.Set!Parent_InitWC(V.Local.sParentInitWC)
+
+
+		
+	F.ODBC.Con!rstSel.Update
+F.ODBC.Con!rstSel.Close
+
+F.Intrinsic.String.Concat(V.Caller.BusintDir,"\Custom\WIP_Operation_Label_ATG.rpt",V.Local.srptLoc)
+F.Global.BI.InitializeReport("WIP_Operation_Label_ATG",V.Local.srptLoc,V.Local.iRptId)
+
+F.Intrinsic.String.Concat("select Printer,ScrapPrinter from ATG_Move_Tckt_Setup where TRMNL='",V.Caller.Terminal,"'",V.Local.sSel)
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		V.Local.sTPrinter.Set(V.ODBC.Con!rstSel.FieldValTrim!Printer)
+		F.Intrinsic.Control.If(V.ODBC.Con!rstSel.FieldValTrim!ScrapPrinter,=,"")
+		V.Local.sScrapPrinter.Set(V.Local.sTPrinter)
+		F.Intrinsic.Control.Else
+		V.Local.sScrapPrinter.Set(V.ODBC.Con!rstSel.FieldValTrim!ScrapPrinter)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Local.sQty,<>,".000000")
+	V.Local.sScrapflag.Set("N")
+'			F.Intrinsic.String.Concat(V.Local.sjob,"*!*",V.Local.ssuffix,"*!*",V.Local.sseq,"*!*",V.Local.sQty,"*!*",V.Local.sWC,"*!*",V.Local.sEmployee,"*!*",V.Local.sscrapqty,"*!*",V.Local.sCloseflag,"*!*",V.Local.sScrapflag,"*!*",V.Local.sQualitynbr,V.Local.sValues)
+'			F.Intrinsic.String.Split("Job*!*Suffix*!*Seq*!*Qty*!*WC*!*Employee*!*scrapqty*!*Closeflag*!*Scrapflag*!*Qualitynbr","*!*",V.Local.sParams)
+
+		F.Intrinsic.String.Split("TRMNL*!*Job*!*Suffix*!*Scrapflag","*!*",V.Local.sParams)
+		F.Intrinsic.String.Concat(V.Caller.Terminal,"*!*",V.Local.sjob,"*!*",V.Local.ssuffix,"*!*",V.Local.sScrapflag,V.Local.sValues)
+		F.Intrinsic.String.Split(V.Local.sValues,"*!*",V.Local.sValues)
+'	F.Global.BI.PrintReport(100018,0,V.Local.sParams,V.Local.sValues,"",True)
+	F.Global.BI.PrintReport(V.Local.iRptId,3,V.Local.sParams,V.Local.sValues,V.local.stprinter,True)
+'F.Intrinsic.UI.Msgbox(V.Local.sTPrinter)
+F.Intrinsic.Control.Endif
+F.ODBC.Con!rstSel.Close
+
+
+F.Intrinsic.Control.If(V.Local.sscrapqty,<>,".000000")
+	V.Local.sScrapflag.Set("Y")
+
+'Scrap - loop through scrap_data table by scrap_ref = sscrapref
+
+F.Intrinsic.Control.If(V.Caller.GSSVersion,"<>","2010%")
+
+	F.Intrinsic.String.Concat("select SCRAP_REF,QUALITY,REASON_CODE,QTY from SCRAP_DATA where SCRAP_REF='",V.Local.sScrapRef,"'",V.Local.sSel)
+	F.ODBC.Connection!Con.OpenRecordsetRO("rstSel",V.Local.sSel)
+
+		Function.Intrinsic.Control.DoUntil(V.odbc.Con!rstSel.eof,=,True)
+			'Function.Intrinsic.Control.ExitDo
+
+			V.Local.sQualitynbr.Set(V.ODBC.Con!rstSel.FieldValTrim!Quality)
+			V.Local.sScrapqty.Set(V.ODBC.Con!rstSel.FieldValTrim!QTY)
+			V.Local.sScrapCode.Set(V.ODBC.Con!rstSel.FieldValTrim!Reason_Code)
+
+
+				F.Intrinsic.String.Concat("select SCRAP_CODE_DESC from V_RJCT_SCRP_CODES where SCRAP_CODE='",V.Local.sScrapCode,"'",V.Local.sSelA)
+				F.ODBC.Connection!Con.OpenRecordsetRO("rstSelA",V.Local.sSelA)
+				F.Intrinsic.Control.If(V.ODBC.Con!rstSelA.EOF,=,False)
+					V.Local.sScrapDescription.Set(V.ODBC.Con!rstSelA.FieldValTrim!SCRAP_CODE_DESC)
+					F.Intrinsic.Control.EndIf
+				F.ODBC.Con!rstSelA.Close
+
+
+
+					F.Intrinsic.String.Concat("select * from ATG_WIP_Oper_Label where TRMNL='",V.Caller.Terminal,"'",V.Local.sSelB)
+					F.ODBC.Connection!Con.OpenRecordsetRW("rstSelB",V.Local.sSelB)
+						
+							F.ODBC.Con!rstSelB.Set!QUALITY_NO(V.Local.sQualitynbr)
+							F.ODBC.Con!rstSelB.Set!SCRAP_CODE(V.Local.sScrapCode)
+							F.ODBC.Con!rstSelB.Set!SCRAP_CODE_DESC(V.Local.sScrapDescription)
+							F.ODBC.Con!rstSelB.Set!SCRAP_QTY(V.Local.sscrapqty)
+					F.ODBC.Con!rstSelB.Update
+					F.ODBC.Con!rstSelB.Close
+		
+
+		F.Intrinsic.String.Split("TRMNL*!*Job*!*Suffix*!*Scrapflag","*!*",V.Local.sParams)
+		F.Intrinsic.String.Concat(V.Caller.Terminal,"*!*",V.Local.sjob,"*!*",V.Local.ssuffix,"*!*",V.Local.sScrapflag,V.Local.sValues)
+		F.Intrinsic.String.Split(V.Local.sValues,"*!*",V.Local.sValues)
+'	F.Global.BI.PrintReport(100018,0,V.Local.sParams,V.Local.sValues,"",True)
+' Scrap Printer added as optional quantentine label printer when scrap labels printed on colored label stock
+	F.Global.BI.PrintReport(V.Local.iRptId,3,V.Local.sParams,V.Local.sValues,V.Local.sScrapPrinter,True)
+
+
+		F.ODBC.con!rstSel.MoveNext
+		Function.Intrinsic.Control.Loop
+	F.ODBC.Con!rstSel.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Caller.GSSVersion,"=","2010%")
+		F.Intrinsic.String.Split("TRMNL*!*Job*!*Suffix*!*Scrapflag","*!*",V.Local.sParams)
+		F.Intrinsic.String.Concat(V.Caller.Terminal,"*!*",V.Local.sjob,"*!*",V.Local.ssuffix,"*!*",V.Local.sScrapflag,V.Local.sValues)
+		F.Intrinsic.String.Split(V.Local.sValues,"*!*",V.Local.sValues)
+'	F.Global.BI.PrintReport(100018,0,V.Local.sParams,V.Local.sValues,"",True)
+	F.Global.BI.PrintReport(V.Local.iRptId,3,V.Local.sParams,V.Local.sValues,V.Local.sTPrinter,True)
+F.Intrinsic.Control.EndIf
+
+
+F.Intrinsic.Control.Endif
+
+F.Intrinsic.Control.CallSub(Unload)
+
+
+
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+F.ODBC.Connection!Con.Close
+f.Intrinsic.Control.End
+
+Program.Sub.Unload.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$WAW$}$1/16/2017 9:29:44 AM$}$False
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$for SMS Millcraft, per quote 6044
+Import processed Invoice details, by branch location, as Invoice and/or Accrual Batches.  Batch IDs will be manually entered.
+Import files will have header, 001, and 002 records.
+Header layout is
+Row ID, Voucher#, Invoice Date, Invoice#, PO#, Vendor#, , Gross Amt, Tax,, Currency, Record Type, Date
+
+001 layout is
+Row ID, Voucher#, GL Company, Account, Line Amt
+
+002 layout is
+Row ID, Voucher#, PO#, Receipt#, Line#, Number, Reference, UM, Price, Qty, Line Amt
+
+Each 001 Record where a 002 record is found, and a PO# exists on the 002 record, are Invoice/Accruals and will be written to the Accrual Upload File. For Records with a matching PO, create only a single Invoice record.
+Each 001 Record without a PO# associated are Invoice, and will be written to the Invoice Upload File.
+
+Program.Sub.Comments.End
